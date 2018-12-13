@@ -16,11 +16,13 @@
 #'
 # devtools::install_github('delta1epsilon/BoxPacking')
 # install.packages("here")
+# install.packages("writexl")
 library(here)
 library(methods)
 library(BoxPacking)
 library(rgl) # 3d Graphing package
 library(readxl) # excel file importing package
+library(writexl)
 
 #' set current working directory
 # getwd <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -292,8 +294,9 @@ global.variable()
 #' @concepts retrieving .xlsx file information with read_excel
 #'           handling missing observation with na.omit
 #' 
-df.Goods_size <- na.omit(read_excel(paste0(getwd, "/KOAS_BoxPacking_INPUT.xlsx"), sheet = "Goods_size"))
-df.Truck_spec <- na.omit(read_excel(paste0(getwd, "/KOAS_BoxPacking_INPUT.xlsx"), sheet = "Truck_spec."))
+df.Goods_size <- na.omit(read_excel(paste0(getwd, "/KOAS_BoxPacking_INPUT.xlsm"), sheet = "Goods_size"))
+df.Truck_Ton <- read_excel(paste0(getwd, "/KOAS_BoxPacking_INPUT.xlsm"), sheet = "INPUT_Truck_Ton", col_names = FALSE)
+df.Truck_spec <- na.omit(read_excel(paste0(getwd, "/KOAS_BoxPacking_INPUT.xlsm"), sheet = "Truck_spec."))
 
 #' 차량 톤수별 사이즈 정보 loading
 trucks <- vector(mode="list")
@@ -333,44 +336,46 @@ Product_CBM <- c(NULL)
 totalProduct_CBM <- round(sum(Product_CBM),2)
 dialogBoxTitle_CBM <- paste("Total Product CBM :", as.character(totalProduct_CBM), "m3" ,sep = " ")
 
-require(svDialogs)
-while(TRUE){
-  
-  # command pop-up dialog box
-  scanTon <- dlgInput(c(paste("              ", dialogBoxTitle_CBM),                  
-                        "       Enter the tonnage of the truck to be loaded                    "), 
-                      default = "", type = c("ok"))$res  
-  
-  # scanTon <- dlgInput(c("\n",
-  #                       paste("                         ", dialogBoxTitle_CBM),
-  #                       "\n",
-  #                       
-  #                       "                               [ CBM Standards ]                              ",
-  #                       "                   1.0t  : max (7.17)   /   optimum (5.02)                    ",
-  #                       "                   1.4t  : max (9.18)   /   optimum (6.43)                    ",
-  #                       "                   2.5t  : max (13.93)  /   optimum (9.75)                    ",
-  #                       "                   3.5t  : max (18.86)  /   optimum (13.20)                   ",
-  #                       "                   5.0t  : max (28.52)  /   optimum (19.96)                   ",
-  #                       "                   5.5t  : max (36.80)  /   optimum (25.76)                   ",
-  #                       "                  11.0t : max (46.53)  /   optimum (32.57)                    ",
-  #                       
-  #                       "\n",
-  #                       "\n",
-  #                       "               Enter the tonnage of the truck to be loaded                    "), 
-  #                     default = "", type = c("ok"))$res
+scanTon <- df.Truck_Ton[2,1]
 
-  if(scanTon!="1"&&
-      scanTon!="1.4"&&
-       scanTon!="2.5"&&
-        scanTon!="3.5"&&
-         scanTon!="5"&&
-          scanTon!="5.5"&&
-           scanTon!="11"){
-    
-      # if user tapped wrong strings, display ERROR message just like below
-      dlg_message("ERROR! : enter exact tonnage of the truck", type = c("ok"))
-  } else break
-}
+# require(svDialogs)
+# while(TRUE){
+#   
+#   # command pop-up dialog box
+#   scanTon <- dlgInput(c(paste("              ", dialogBoxTitle_CBM),                  
+#                         "       Enter the tonnage of the truck to be loaded                    "), 
+#                       default = "", type = c("ok"))$res  
+#   
+#   # scanTon <- dlgInput(c("\n",
+#   #                       paste("                         ", dialogBoxTitle_CBM),
+#   #                       "\n",
+#   #                       
+#   #                       "                               [ CBM Standards ]                              ",
+#   #                       "                   1.0t  : max (7.17)   /   optimum (5.02)                    ",
+#   #                       "                   1.4t  : max (9.18)   /   optimum (6.43)                    ",
+#   #                       "                   2.5t  : max (13.93)  /   optimum (9.75)                    ",
+#   #                       "                   3.5t  : max (18.86)  /   optimum (13.20)                   ",
+#   #                       "                   5.0t  : max (28.52)  /   optimum (19.96)                   ",
+#   #                       "                   5.5t  : max (36.80)  /   optimum (25.76)                   ",
+#   #                       "                  11.0t : max (46.53)  /   optimum (32.57)                    ",
+#   #                       
+#   #                       "\n",
+#   #                       "\n",
+#   #                       "               Enter the tonnage of the truck to be loaded                    "), 
+#   #                     default = "", type = c("ok"))$res
+# 
+#   if(scanTon!="1"&&
+#       scanTon!="1.4"&&
+#        scanTon!="2.5"&&
+#         scanTon!="3.5"&&
+#          scanTon!="5"&&
+#           scanTon!="5.5"&&
+#            scanTon!="11"){
+#     
+#       # if user tapped wrong strings, display ERROR message just like below
+#       dlg_message("ERROR! : enter exact tonnage of the truck", type = c("ok"))
+#   } else break
+# }
   # assign row index to 'ton' object
   if(scanTon=="1"){ton<-1
     } else if(scanTon=="1.4"){ton<-2
@@ -472,6 +477,7 @@ loadingRate <- round((sum(Loaded_Product_CBM)/(df.Truck_spec$Length[ton]*
 # -----------------------------------------------------------------------------------
 #'
 #' display loading result table & add text in 3d plot (loading rate)
+#' 
 text3d(x=0, y=3.5, z=0, 
        text = paste("Loading Rate :", loadingRate, "%", sep = " "), 
        color = "blue", specular="black", 
@@ -480,5 +486,9 @@ text3d(x=0, y=3.5, z=0,
 
 utils::View(result.table,
             title = paste("Loading Rate :", loadingRate, "%", sep = " "))
+
+writexl::write_xlsx(result.table, path = paste0(getwd, "/output/KOAS_output.xlsx"), col_names = TRUE)
+
+Sys.sleep(10000)
   
 
